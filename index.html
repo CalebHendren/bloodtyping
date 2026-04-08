@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blood Typing Simulation — Anatomy &amp; Physiology II</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Sans+3:wght@400;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #faf7f2;
+    --surface: #ffffff;
+    --surface-alt: #f3eeea;
+    --text: #2c2420;
+    --text-muted: #6b5e54;
+    --accent: #b91c1c;
+    --accent-dark: #7f1d1d;
+    --accent-light: #fecaca;
+    --positive: #166534;
+    --positive-bg: #dcfce7;
+    --negative: #1e40af;
+    --negative-bg: #dbeafe;
+    --border: #d6cdc4;
+    --shadow: 0 2px 8px rgba(44,36,32,0.08);
+    --shadow-lg: 0 8px 24px rgba(44,36,32,0.12);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'Source Sans 3', -apple-system, sans-serif;
+    --focus-ring: 0 0 0 3px rgba(185, 28, 28, 0.4);
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Skip link for accessibility */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    z-index: 1000;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  *:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: 3px;
+  }
+
+  header {
+    background: var(--accent-dark);
+    color: #fff;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 400;
+    margin-bottom: 0.25rem;
+    position: relative;
+  }
+  header p {
+    font-size: 1rem;
+    opacity: 0.85;
+    position: relative;
+  }
+
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+  }
+
+  /* Tab navigation */
+  .tab-nav {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .tab-nav [role="tab"] {
+    background: none;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab-nav [role="tab"]:hover {
+    color: var(--text);
+  }
+  .tab-nav [role="tab"][aria-selected="true"] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 400;
+    margin-bottom: 0.75rem;
+    color: var(--accent-dark);
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .card p, .card li {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.65;
+  }
+  .card ul, .card ol {
+    padding-left: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .card li { margin-bottom: 0.3rem; }
+
+  /* Blood typing simulation area */
+  .sim-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .sim-container { grid-template-columns: 1fr 1fr; }
+  }
+
+  .patient-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .patient-selector button {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+  .patient-selector button:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .patient-selector button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* Test wells */
+  .well-row {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+  }
+  .well {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .well-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    background: var(--surface-alt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.4s ease;
+    position: relative;
+  }
+  .well-circle[data-state="waiting"] {
+    background: #fef3c7;
+    border-color: #d97706;
+  }
+  .well-circle[data-state="positive"] {
+    background: var(--accent);
+    border-color: var(--accent-dark);
+    color: #fff;
+  }
+  .well-circle[data-state="positive"]::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent),
+      repeating-conic-gradient(from 0deg, rgba(255,255,255,0.15) 0deg 20deg, transparent 20deg 40deg);
+    animation: clump 2s ease-in-out infinite alternate;
+  }
+  @keyframes clump {
+    from { opacity: 0.6; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1.02); }
+  }
+  .well-circle[data-state="negative"] {
+    background: #eff6ff;
+    border-color: var(--negative);
+    color: var(--negative);
+  }
+  .well-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .well-result {
+    font-size: 0.8rem;
+    font-weight: 600;
+    min-height: 1.2em;
+  }
+  .well-result.pos { color: var(--accent); }
+  .well-result.neg { color: var(--negative); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 2px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); background: var(--accent-light); }
+
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  /* Info banner */
+  .info-banner {
+    background: #fef9c3;
+    border: 1px solid #eab308;
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Determined type display */
+  .type-display {
+    text-align: center;
+    padding: 1rem;
+    border-radius: var(--radius);
+    background: var(--surface-alt);
+    border: 2px dashed var(--border);
+    margin-top: 1rem;
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .type-display.revealed {
+    border-style: solid;
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .type-display .big-type {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--accent-dark);
+  }
+
+  /* Compatibility table/grid */
+  .compat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  .compat-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .compat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .compat-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .compat-card .type-badge {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--accent-dark);
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  .compat-card .type-sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  /* Compatibility matching area */
+  .match-area {
+    margin: 1.5rem 0;
+  }
+  .match-prompt {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+    padding: 0.75rem;
+    background: var(--surface-alt);
+    border-radius: var(--radius-sm);
+  }
+  .match-prompt .highlight {
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+  }
+
+  /* Donor option buttons */
+  .donor-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  .donor-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 60px;
+    text-align: center;
+    color: var(--text);
+  }
+  .donor-btn:hover { border-color: var(--accent); }
+  .donor-btn[aria-pressed="true"] {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .donor-btn.correct-highlight {
+    background: var(--positive-bg);
+    border-color: var(--positive);
+    color: var(--positive);
+  }
+  .donor-btn.incorrect-highlight {
+    background: #fee2e2;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Feedback area */
+  .feedback {
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    text-align: center;
+    margin-top: 1rem;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct {
+    background: var(--positive-bg);
+    color: var(--positive);
+    border: 1px solid var(--positive);
+  }
+  .feedback.incorrect {
+    background: #fee2e2;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+
+  /* Score tracker */
+  .score-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-alt);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .score-bar .score-num {
+    color: var(--accent);
+    font-size: 1.1rem;
+  }
+
+  /* Progress indicator */
+  .progress-dots {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .progress-dots .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    transition: all 0.2s;
+  }
+  .progress-dots .dot.done-correct {
+    background: var(--positive);
+    border-color: var(--positive);
+  }
+  .progress-dots .dot.done-incorrect {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .progress-dots .dot.current {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
+  /* Reference table */
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+  }
+  .ref-table caption {
+    font-weight: 700;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+  }
+  .ref-table th, .ref-table td {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .ref-table th {
+    background: var(--surface-alt);
+    font-weight: 700;
+  }
+  .ref-table td { background: var(--surface); }
+  .ref-table .check { color: var(--positive); font-weight: 700; }
+  .ref-table .cross { color: var(--accent); font-weight: 700; }
+
+  /* Summary results */
+  .summary-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    margin: 1.5rem 0;
+  }
+  .summary-card .big-score {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    color: var(--accent-dark);
+  }
+  .summary-card p { color: var(--text-muted); margin-top: 0.5rem; }
+
+  /* Case study narrative */
+  .case-narrative {
+    background: var(--surface-alt);
+    border-left: 4px solid var(--accent);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+  .case-narrative .case-tag {
+    display: inline-block;
+    background: var(--accent-dark);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 3px;
+    margin-bottom: 0.5rem;
+  }
+  .case-question {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  .case-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .case-opt-btn {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .case-opt-btn:hover { border-color: var(--accent); background: #fef2f2; }
+  .case-opt-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-light); font-weight: 600; }
+  .case-opt-btn:disabled { cursor: default; opacity: 0.85; }
+  .case-opt-btn.opt-correct { border-color: var(--positive); background: var(--positive-bg); }
+  .case-opt-btn.opt-incorrect { border-color: var(--accent); background: #fee2e2; }
+  .case-explanation {
+    background: #fffbeb;
+    border: 1px solid #f59e0b;
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-top: 0.75rem;
+    display: none;
+  }
+  .case-explanation.show { display: block; }
+  .case-explanation strong { color: var(--accent-dark); }
+
+  /* Visually hidden for screen readers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Live region for announcements */
+  [aria-live] {
+    position: relative;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    .well-circle { width: 72px; height: 72px; }
+    .well-row { gap: 1rem; }
+    .tab-nav [role="tab"] { padding: 0.6rem 0.75rem; font-size: 0.9rem; }
+  }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<header>
+  <h1>Blood Typing Simulation</h1>
+  <p>ABO &amp; Rh Blood Group Identification &mdash; Anatomy &amp; Physiology II</p>
+</header>
+
+<main id="main-content">
+  <!-- Tab Navigation -->
+  <div class="tab-nav" role="tablist" aria-label="Activity sections">
+    <button role="tab" id="tab-learn" aria-selected="true" aria-controls="panel-learn" tabindex="0">Learn</button>
+    <button role="tab" id="tab-type" aria-selected="false" aria-controls="panel-type" tabindex="-1">Type a Sample</button>
+    <button role="tab" id="tab-match" aria-selected="false" aria-controls="panel-match" tabindex="-1">Compatibility</button>
+    <button role="tab" id="tab-cases" aria-selected="false" aria-controls="panel-cases" tabindex="-1">Case Studies</button>
+  </div>
+
+  <!-- PANEL 1: Learn -->
+  <div role="tabpanel" id="panel-learn" aria-labelledby="tab-learn" class="tab-panel active">
+    <div class="card">
+      <h2>Blood Typing Protocol</h2>
+      <p>Blood typing determines which ABO group and Rh factor a patient's blood belongs to. The test relies on <strong>antigen–antibody agglutination</strong>: when antibodies in a reagent bind to matching antigens on red blood cells, visible clumping occurs.</p>
+    </div>
+
+    <div class="card">
+      <h3>The 3 Reagents</h3>
+      <p>Each patient sample is mixed with three antisera in separate wells on a test slide:</p>
+      <ol>
+        <li><strong>Anti-A</strong> — contains antibodies against the A antigen. If the blood carries A antigens, agglutination (clumping) occurs.</li>
+        <li><strong>Anti-B</strong> — contains antibodies against the B antigen. If the blood carries B antigens, agglutination occurs.</li>
+        <li><strong>Anti-D (Anti-Rh)</strong> — contains antibodies against the D antigen (Rh factor). Agglutination means the patient is Rh-positive.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3>Interpreting Results</h3>
+      <table class="ref-table" aria-label="Blood typing interpretation guide">
+        <caption>Agglutination patterns for each blood type</caption>
+        <thead>
+          <tr>
+            <th scope="col">Blood Type</th>
+            <th scope="col">Anti-A</th>
+            <th scope="col">Anti-B</th>
+            <th scope="col">Anti-D (Rh)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>A+</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="check" aria-label="Clumps">&#x2713;</td></tr>
+          <tr><td>A−</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="cross" aria-label="No clumping">&#x2717;</td></tr>
+          <tr><td>B+</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="check" aria-label="Clumps">&#x2713;</td></tr>
+          <tr><td>B−</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="cross" aria-label="No clumping">&#x2717;</td></tr>
+          <tr><td>AB+</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="check" aria-label="Clumps">&#x2713;</td></tr>
+          <tr><td>AB−</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="check" aria-label="Clumps">&#x2713;</td><td class="cross" aria-label="No clumping">&#x2717;</td></tr>
+          <tr><td>O+</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="check" aria-label="Clumps">&#x2713;</td></tr>
+          <tr><td>O−</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="cross" aria-label="No clumping">&#x2717;</td><td class="cross" aria-label="No clumping">&#x2717;</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Key:</strong> <span class="check" aria-hidden="true">&#x2713;</span> = agglutination (clumping) &nbsp; <span class="cross" aria-hidden="true">&#x2717;</span> = no agglutination (smooth)</p>
+    </div>
+
+    <div class="card">
+      <h3>Transfusion Compatibility Basics</h3>
+      <p>A recipient can only safely receive red blood cells that <strong>do not carry antigens</strong> their plasma has antibodies against. The rules:</p>
+      <ul>
+        <li><strong>Type O−</strong> is the universal red blood cell donor (no A, B, or D antigens).</li>
+        <li><strong>Type AB+</strong> is the universal recipient (no anti-A, anti-B, or anti-D antibodies).</li>
+        <li>Rh-negative recipients should not receive Rh-positive blood.</li>
+        <li>Type A recipients can receive A and O. Type B recipients can receive B and O.</li>
+      </ul>
+    </div>
+
+    <div class="btn-row" style="justify-content: center;">
+      <button class="btn btn-primary" id="start-typing-btn">Start Typing Samples &rarr;</button>
+    </div>
+  </div>
+
+  <!-- PANEL 2: Type a Sample -->
+  <div role="tabpanel" id="panel-type" aria-labelledby="tab-type" class="tab-panel" hidden>
+    <div class="card">
+      <h2>Determine the Blood Type</h2>
+      <p>Select a patient, then add reagents to each well and observe the agglutination reaction. Based on the pattern, determine the blood type.</p>
+
+      <h3 style="margin-top:1rem;">Select a Patient</h3>
+      <div class="patient-selector" role="group" aria-label="Patient selection">
+        <!-- Populated by JS -->
+      </div>
+
+      <div id="typing-workspace" style="display:none;">
+        <div class="info-banner" role="status" aria-live="polite" id="typing-instructions">
+          Click each well to add the reagent and observe the result.
+        </div>
+
+        <div class="well-row" role="group" aria-label="Test wells">
+          <div class="well">
+            <button class="well-circle" id="well-a" data-state="empty" aria-label="Anti-A well. Click to add reagent.">
+              <span>Add<br>Anti-A</span>
+            </button>
+            <span class="well-label">Anti-A</span>
+            <span class="well-result" id="result-a" aria-live="polite"></span>
+          </div>
+          <div class="well">
+            <button class="well-circle" id="well-b" data-state="empty" aria-label="Anti-B well. Click to add reagent.">
+              <span>Add<br>Anti-B</span>
+            </button>
+            <span class="well-label">Anti-B</span>
+            <span class="well-result" id="result-b" aria-live="polite"></span>
+          </div>
+          <div class="well">
+            <button class="well-circle" id="well-d" data-state="empty" aria-label="Anti-D well. Click to add reagent.">
+              <span>Add<br>Anti-D</span>
+            </button>
+            <span class="well-label">Anti-D</span>
+            <span class="well-result" id="result-d" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <div id="type-answer-area" style="display:none; margin-top:1.5rem;">
+          <h3>What is this patient's blood type?</h3>
+          <div class="donor-options" role="radiogroup" aria-label="Blood type answer choices" id="type-choices">
+            <!-- Populated by JS -->
+          </div>
+          <div id="type-feedback" class="feedback" role="alert"></div>
+        </div>
+
+        <div class="type-display" id="type-reveal">
+          <span style="color:var(--text-muted); font-size:0.9rem;">Blood type will appear here after testing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 3: Compatibility Matching -->
+  <div role="tabpanel" id="panel-match" aria-labelledby="tab-match" class="tab-panel" hidden>
+    <div class="card">
+      <h2>Compatibility Matching</h2>
+      <p>For each recipient blood type, select <strong>all</strong> compatible donor types. Remember: recipients cannot receive blood carrying antigens they have antibodies against.</p>
+
+      <div class="score-bar">
+        <span>Question <span id="q-current">1</span> of <span id="q-total">8</span></span>
+        <div class="progress-dots" id="progress-dots" aria-label="Progress">
+          <!-- Populated by JS -->
+        </div>
+        <span>Score: <span class="score-num" id="score-num">0</span></span>
+      </div>
+
+      <div class="match-area" id="match-area" aria-live="polite">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <div id="match-summary" class="summary-card" style="display:none;">
+      <h2 style="font-family:var(--font-display); color:var(--accent-dark);">Activity Complete</h2>
+      <div class="big-score" id="final-score"></div>
+      <p id="final-message"></p>
+      <div class="btn-row" style="justify-content:center; margin-top:1rem;">
+        <button class="btn btn-primary" id="retry-match-btn">Try Again</button>
+        <button class="btn btn-secondary" id="show-ref-btn">View Reference Table</button>
+      </div>
+    </div>
+
+    <!-- Hidden reference table revealed on demand -->
+    <div id="ref-table-section" class="card" style="display:none;">
+      <h3>Red Blood Cell Compatibility Reference</h3>
+      <table class="ref-table" aria-label="Full RBC compatibility chart" id="full-compat-table">
+        <caption>Who can receive from whom (RBC transfusion)</caption>
+        <thead>
+          <tr>
+            <th scope="col">Recipient &#8595; / Donor &#8594;</th>
+            <th scope="col">O−</th>
+            <th scope="col">O+</th>
+            <th scope="col">A−</th>
+            <th scope="col">A+</th>
+            <th scope="col">B−</th>
+            <th scope="col">B+</th>
+            <th scope="col">AB−</th>
+            <th scope="col">AB+</th>
+          </tr>
+        </thead>
+        <tbody id="compat-tbody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL 4: Case Studies -->
+  <div role="tabpanel" id="panel-cases" aria-labelledby="tab-cases" class="tab-panel" hidden>
+    <div class="card">
+      <h2>Clinical Case Studies</h2>
+      <p>Read each scenario carefully. Apply your knowledge of ABO/Rh blood typing and transfusion compatibility to determine the safest course of action.</p>
+
+      <div class="score-bar">
+        <span>Case <span id="case-current">1</span> of <span id="case-total">6</span></span>
+        <div class="progress-dots" id="case-progress" aria-label="Case progress"></div>
+        <span>Score: <span class="score-num" id="case-score">0</span></span>
+      </div>
+
+      <div id="case-area" aria-live="polite"></div>
+    </div>
+
+    <div id="case-summary" class="summary-card" style="display:none;">
+      <h2 style="font-family:var(--font-display); color:var(--accent-dark);">Case Studies Complete</h2>
+      <div class="big-score" id="case-final-score"></div>
+      <p id="case-final-message"></p>
+      <div class="btn-row" style="justify-content:center; margin-top:1rem;">
+        <button class="btn btn-primary" id="retry-cases-btn">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <div aria-live="assertive" id="sr-announcements" class="sr-only"></div>
+</main>
+
+<footer>
+  <p>Blood Typing Simulation &mdash; Anatomy &amp; Physiology II</p>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // ========== DATA ==========
+  const TYPES = ['O-','O+','A-','A+','B-','B+','AB-','AB+'];
+
+  // Antigen profile for each type
+  const ANTIGENS = {
+    'A+':  { A: true,  B: false, D: true },
+    'A-':  { A: true,  B: false, D: false },
+    'B+':  { A: false, B: true,  D: true },
+    'B-':  { A: false, B: true,  D: false },
+    'AB+': { A: true,  B: true,  D: true },
+    'AB-': { A: true,  B: true,  D: false },
+    'O+':  { A: false, B: false, D: true },
+    'O-':  { A: false, B: false, D: false },
+  };
+
+  // Antibodies for each type
+  const ANTIBODIES = {
+    'A+':  ['B'],
+    'A-':  ['B'],
+    'B+':  ['A'],
+    'B-':  ['A'],
+    'AB+': [],
+    'AB-': [],
+    'O+':  ['A','B'],
+    'O-':  ['A','B'],
+  };
+
+  // Compatibility: can recipient receive from donor?
+  function canReceive(recipient, donor) {
+    const donorAg = ANTIGENS[donor];
+    const recipAb = ANTIBODIES[recipient];
+    // Check ABO
+    for (const ab of recipAb) {
+      if (donorAg[ab]) return false;
+    }
+    // Check Rh: if recipient is Rh-, donor must be Rh-
+    const recipRhNeg = !ANTIGENS[recipient].D;
+    if (recipRhNeg && donorAg.D) return false;
+    return true;
+  }
+
+  // Patient samples for typing exercise
+  const PATIENTS = [
+    { name: 'Patient 1', type: 'A+' },
+    { name: 'Patient 2', type: 'O-' },
+    { name: 'Patient 3', type: 'B+' },
+    { name: 'Patient 4', type: 'AB-' },
+    { name: 'Patient 5', type: 'O+' },
+    { name: 'Patient 6', type: 'A-' },
+  ];
+
+  // ========== TAB LOGIC ==========
+  const tabs = document.querySelectorAll('[role="tab"]');
+  const panels = document.querySelectorAll('[role="tabpanel"]');
+
+  function activateTab(tab) {
+    tabs.forEach(t => {
+      t.setAttribute('aria-selected', 'false');
+      t.setAttribute('tabindex', '-1');
+    });
+    tab.setAttribute('aria-selected', 'true');
+    tab.setAttribute('tabindex', '0');
+    tab.focus();
+
+    panels.forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+    const panel = document.getElementById(tab.getAttribute('aria-controls'));
+    panel.classList.add('active');
+    panel.hidden = false;
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => activateTab(tab));
+    tab.addEventListener('keydown', e => {
+      const tabArr = Array.from(tabs);
+      let idx = tabArr.indexOf(tab);
+      if (e.key === 'ArrowRight') { idx = (idx + 1) % tabArr.length; e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { idx = (idx - 1 + tabArr.length) % tabArr.length; e.preventDefault(); }
+      else if (e.key === 'Home') { idx = 0; e.preventDefault(); }
+      else if (e.key === 'End') { idx = tabArr.length - 1; e.preventDefault(); }
+      else return;
+      activateTab(tabArr[idx]);
+    });
+  });
+
+  document.getElementById('start-typing-btn').addEventListener('click', () => {
+    activateTab(document.getElementById('tab-type'));
+  });
+
+  // ========== TYPING SIMULATION ==========
+  const patientSelector = document.querySelector('.patient-selector');
+  const workspace = document.getElementById('typing-workspace');
+  const wellA = document.getElementById('well-a');
+  const wellB = document.getElementById('well-b');
+  const wellD = document.getElementById('well-d');
+  const resultA = document.getElementById('result-a');
+  const resultB = document.getElementById('result-b');
+  const resultD = document.getElementById('result-d');
+  const typeReveal = document.getElementById('type-reveal');
+  const typeAnswerArea = document.getElementById('type-answer-area');
+  const typeChoices = document.getElementById('type-choices');
+  const typeFeedback = document.getElementById('type-feedback');
+  const instructions = document.getElementById('typing-instructions');
+
+  let currentPatient = null;
+  let wellsTested = { A: false, B: false, D: false };
+  let typeAnswered = false;
+
+  // Build patient buttons
+  PATIENTS.forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = p.name;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => selectPatient(i));
+    patientSelector.appendChild(btn);
+  });
+
+  function selectPatient(idx) {
+    currentPatient = PATIENTS[idx];
+    typeAnswered = false;
+    wellsTested = { A: false, B: false, D: false };
+
+    // Update selector
+    patientSelector.querySelectorAll('button').forEach((b, i) => {
+      b.setAttribute('aria-pressed', i === idx ? 'true' : 'false');
+    });
+
+    // Reset wells
+    [wellA, wellB, wellD].forEach(w => {
+      w.dataset.state = 'empty';
+      w.querySelector('span').style.display = '';
+      w.disabled = false;
+    });
+    wellA.querySelector('span').textContent = 'Add\nAnti-A';
+    wellB.querySelector('span').textContent = 'Add\nAnti-B';
+    wellD.querySelector('span').textContent = 'Add\nAnti-D';
+    wellA.setAttribute('aria-label', 'Anti-A well. Click to add reagent.');
+    wellB.setAttribute('aria-label', 'Anti-B well. Click to add reagent.');
+    wellD.setAttribute('aria-label', 'Anti-D well. Click to add reagent.');
+
+    resultA.textContent = '';
+    resultA.className = 'well-result';
+    resultB.textContent = '';
+    resultB.className = 'well-result';
+    resultD.textContent = '';
+    resultD.className = 'well-result';
+
+    typeReveal.innerHTML = '<span style="color:var(--text-muted); font-size:0.9rem;">Blood type will appear here after testing</span>';
+    typeReveal.classList.remove('revealed');
+    typeAnswerArea.style.display = 'none';
+    typeFeedback.classList.remove('show', 'correct', 'incorrect');
+    instructions.textContent = 'Click each well to add the reagent and observe the result.';
+
+    workspace.style.display = '';
+    announce(currentPatient.name + ' selected. Click each well to add reagents.');
+  }
+
+  function testWell(reagent, wellEl, resultEl) {
+    if (!currentPatient || wellsTested[reagent]) return;
+    wellsTested[reagent] = true;
+
+    const ag = ANTIGENS[currentPatient.type];
+    const clumps = reagent === 'A' ? ag.A : reagent === 'B' ? ag.B : ag.D;
+
+    wellEl.dataset.state = 'waiting';
+    wellEl.querySelector('span').textContent = '...';
+    wellEl.disabled = true;
+
+    setTimeout(() => {
+      if (clumps) {
+        wellEl.dataset.state = 'positive';
+        wellEl.querySelector('span').style.display = 'none';
+        resultEl.textContent = 'Agglutination';
+        resultEl.className = 'well-result pos';
+        wellEl.setAttribute('aria-label', 'Anti-' + reagent + ' well. Result: agglutination detected.');
+      } else {
+        wellEl.dataset.state = 'negative';
+        wellEl.querySelector('span').textContent = 'Smooth';
+        resultEl.textContent = 'No clumping';
+        resultEl.className = 'well-result neg';
+        wellEl.setAttribute('aria-label', 'Anti-' + reagent + ' well. Result: no agglutination.');
+      }
+      announce('Anti-' + reagent + ' result: ' + (clumps ? 'agglutination detected' : 'no agglutination'));
+      checkAllWellsTested();
+    }, 800);
+  }
+
+  wellA.addEventListener('click', () => testWell('A', wellA, resultA));
+  wellB.addEventListener('click', () => testWell('B', wellB, resultB));
+  wellD.addEventListener('click', () => testWell('D', wellD, resultD));
+
+  function checkAllWellsTested() {
+    if (wellsTested.A && wellsTested.B && wellsTested.D) {
+      instructions.textContent = 'All reagents added. Now determine the blood type based on the agglutination pattern.';
+      showTypeChoices();
+    }
+  }
+
+  function showTypeChoices() {
+    typeAnswerArea.style.display = '';
+    typeChoices.innerHTML = '';
+    // Shuffle types for variety
+    const shuffled = [...TYPES].sort(() => Math.random() - 0.5);
+    shuffled.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'donor-btn';
+      btn.textContent = t;
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('aria-checked', 'false');
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', () => submitTypeAnswer(t, btn));
+      typeChoices.appendChild(btn);
+    });
+  }
+
+  function submitTypeAnswer(answer, btn) {
+    if (typeAnswered) return;
+    typeAnswered = true;
+
+    typeChoices.querySelectorAll('.donor-btn').forEach(b => {
+      b.setAttribute('aria-pressed', 'false');
+      b.setAttribute('aria-checked', 'false');
+      b.disabled = true;
+    });
+    btn.setAttribute('aria-pressed', 'true');
+    btn.setAttribute('aria-checked', 'true');
+
+    const correct = answer === currentPatient.type;
+    typeFeedback.textContent = correct
+      ? 'Correct! This sample is ' + currentPatient.type + '.'
+      : 'Not quite. The correct type is ' + currentPatient.type + '. Review the agglutination pattern above.';
+    typeFeedback.className = 'feedback show ' + (correct ? 'correct' : 'incorrect');
+
+    // Highlight correct answer
+    typeChoices.querySelectorAll('.donor-btn').forEach(b => {
+      if (b.textContent === currentPatient.type) {
+        b.classList.add('correct-highlight');
+      } else if (b.getAttribute('aria-pressed') === 'true' && !correct) {
+        b.classList.add('incorrect-highlight');
+      }
+    });
+
+    typeReveal.innerHTML = '<span class="big-type">' + currentPatient.type + '</span>';
+    typeReveal.classList.add('revealed');
+    announce(correct ? 'Correct! Blood type is ' + currentPatient.type : 'Incorrect. The correct blood type is ' + currentPatient.type);
+  }
+
+  // ========== COMPATIBILITY MATCHING ==========
+  const qCurrent = document.getElementById('q-current');
+  const qTotal = document.getElementById('q-total');
+  const progressDots = document.getElementById('progress-dots');
+  const scoreNum = document.getElementById('score-num');
+  const matchArea = document.getElementById('match-area');
+  const matchSummary = document.getElementById('match-summary');
+  const finalScore = document.getElementById('final-score');
+  const finalMessage = document.getElementById('final-message');
+
+  let matchQuestions = [];
+  let matchIdx = 0;
+  let matchScore = 0;
+  let matchSelections = new Set();
+
+  function initMatch() {
+    matchQuestions = [...TYPES].sort(() => Math.random() - 0.5);
+    matchIdx = 0;
+    matchScore = 0;
+    matchSelections = new Set();
+    scoreNum.textContent = '0';
+    qTotal.textContent = matchQuestions.length;
+    matchSummary.style.display = 'none';
+    document.getElementById('ref-table-section').style.display = 'none';
+    buildProgressDots();
+    renderMatchQuestion();
+  }
+
+  function buildProgressDots() {
+    progressDots.innerHTML = '';
+    matchQuestions.forEach((_, i) => {
+      const dot = document.createElement('span');
+      dot.className = 'dot' + (i === 0 ? ' current' : '');
+      dot.setAttribute('aria-label', 'Question ' + (i + 1));
+      progressDots.appendChild(dot);
+    });
+  }
+
+  function renderMatchQuestion() {
+    if (matchIdx >= matchQuestions.length) {
+      showMatchSummary();
+      return;
+    }
+    const recipient = matchQuestions[matchIdx];
+    qCurrent.textContent = matchIdx + 1;
+    matchSelections = new Set();
+
+    // Update dots
+    progressDots.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('current', i === matchIdx);
+    });
+
+    matchArea.innerHTML = '';
+    const prompt = document.createElement('div');
+    prompt.className = 'match-prompt';
+    prompt.innerHTML = 'A patient with blood type <span class="highlight">' + recipient + '</span> needs a transfusion.<br>Select <strong>all</strong> compatible donor types:';
+    matchArea.appendChild(prompt);
+
+    const options = document.createElement('div');
+    options.className = 'donor-options';
+    options.setAttribute('role', 'group');
+    options.setAttribute('aria-label', 'Select compatible donors for ' + recipient);
+    TYPES.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'donor-btn';
+      btn.textContent = t;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', () => toggleDonor(t, btn));
+      options.appendChild(btn);
+    });
+    matchArea.appendChild(options);
+
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.textContent = 'Check Answer';
+    submitBtn.id = 'check-match-btn';
+    submitBtn.addEventListener('click', () => checkMatchAnswer(recipient));
+    const btnRow = document.createElement('div');
+    btnRow.className = 'btn-row';
+    btnRow.style.justifyContent = 'center';
+    btnRow.appendChild(submitBtn);
+    matchArea.appendChild(btnRow);
+
+    const fb = document.createElement('div');
+    fb.className = 'feedback';
+    fb.id = 'match-feedback';
+    fb.setAttribute('role', 'alert');
+    matchArea.appendChild(fb);
+
+    announce('Question ' + (matchIdx + 1) + ': Select compatible donors for ' + recipient);
+  }
+
+  function toggleDonor(type, btn) {
+    if (btn.disabled) return;
+    if (matchSelections.has(type)) {
+      matchSelections.delete(type);
+      btn.setAttribute('aria-pressed', 'false');
+    } else {
+      matchSelections.add(type);
+      btn.setAttribute('aria-pressed', 'true');
+    }
+  }
+
+  function checkMatchAnswer(recipient) {
+    const correctDonors = new Set(TYPES.filter(d => canReceive(recipient, d)));
+    const isCorrect = matchSelections.size === correctDonors.size &&
+      [...matchSelections].every(s => correctDonors.has(s));
+
+    const fb = document.getElementById('match-feedback');
+    const allBtns = matchArea.querySelectorAll('.donor-btn');
+    const checkBtn = document.getElementById('check-match-btn');
+
+    allBtns.forEach(b => {
+      b.disabled = true;
+      const t = b.textContent;
+      if (correctDonors.has(t)) {
+        b.classList.add('correct-highlight');
+      } else if (matchSelections.has(t)) {
+        b.classList.add('incorrect-highlight');
+      }
+    });
+
+    if (isCorrect) {
+      matchScore++;
+      scoreNum.textContent = matchScore;
+      fb.textContent = 'Correct! ' + recipient + ' can receive from: ' + [...correctDonors].join(', ') + '.';
+      fb.className = 'feedback show correct';
+      progressDots.querySelectorAll('.dot')[matchIdx].className = 'dot done-correct';
+    } else {
+      fb.textContent = 'Not quite. ' + recipient + ' can receive from: ' + [...correctDonors].join(', ') + '.';
+      fb.className = 'feedback show incorrect';
+      progressDots.querySelectorAll('.dot')[matchIdx].className = 'dot done-incorrect';
+    }
+
+    checkBtn.textContent = matchIdx < matchQuestions.length - 1 ? 'Next Question →' : 'See Results';
+    checkBtn.onclick = () => { matchIdx++; renderMatchQuestion(); };
+
+    announce(isCorrect ? 'Correct!' : 'Incorrect. Compatible donors are ' + [...correctDonors].join(', '));
+  }
+
+  function showMatchSummary() {
+    matchArea.innerHTML = '';
+    matchSummary.style.display = '';
+    finalScore.textContent = matchScore + ' / ' + matchQuestions.length;
+    const pct = Math.round((matchScore / matchQuestions.length) * 100);
+    if (pct === 100) finalMessage.textContent = 'Perfect score! You have a strong understanding of blood type compatibility.';
+    else if (pct >= 75) finalMessage.textContent = 'Great work! Review the types you missed and try again.';
+    else if (pct >= 50) finalMessage.textContent = 'Good effort. Study the compatibility rules on the Learn tab and try again.';
+    else finalMessage.textContent = 'Keep practicing. Review the Learn tab for the compatibility rules.';
+    announce('Activity complete. Score: ' + matchScore + ' out of ' + matchQuestions.length);
+  }
+
+  document.getElementById('retry-match-btn').addEventListener('click', initMatch);
+  document.getElementById('show-ref-btn').addEventListener('click', () => {
+    const section = document.getElementById('ref-table-section');
+    section.style.display = section.style.display === 'none' ? '' : 'none';
+    buildFullCompatTable();
+  });
+
+  function buildFullCompatTable() {
+    const tbody = document.getElementById('compat-tbody');
+    if (tbody.children.length > 0) return;
+    TYPES.forEach(r => {
+      const tr = document.createElement('tr');
+      const th = document.createElement('th');
+      th.scope = 'row';
+      th.textContent = r;
+      tr.appendChild(th);
+      TYPES.forEach(d => {
+        const td = document.createElement('td');
+        if (canReceive(r, d)) {
+          td.innerHTML = '<span class="check" aria-label="Compatible">&#x2713;</span>';
+        } else {
+          td.innerHTML = '<span class="cross" aria-label="Incompatible">&#x2717;</span>';
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Init compatibility on tab activation
+  const tabMatch = document.getElementById('tab-match');
+  let matchInitialized = false;
+  tabMatch.addEventListener('click', () => {
+    if (!matchInitialized) { initMatch(); matchInitialized = true; }
+  });
+
+  // ========== CASE STUDIES ==========
+  const CASES = [
+    {
+      tag: 'Emergency Department',
+      narrative: 'A 34-year-old woman is rushed into the ED after a car accident with significant internal bleeding. Her blood type is <strong>A+</strong>. The blood bank reports that all A+ and A\u2212 units are currently allocated to surgery patients upstairs. Available units in the emergency cooler: <strong>O+, B+, AB\u2212</strong>.',
+      question: 'Which of the available units can be safely transfused?',
+      options: [
+        'B+ — it is the closest match available',
+        'O+ — it carries no A or B antigens',
+        'AB\u2212 — it is Rh-negative so it is always safe',
+        'None of these are safe; wait for A+ units'
+      ],
+      correct: 1,
+      explanation: '<strong>O+</strong> is the correct choice. Type O red blood cells carry no A or B antigens, so they will not trigger an ABO reaction in an A+ recipient. Since the patient is Rh-positive, receiving Rh-positive blood is also safe. B+ carries B antigens, which the patient\'s anti-B antibodies would attack. AB\u2212 carries both A and B antigens — the B antigen would cause a reaction.'
+    },
+    {
+      tag: 'Labor & Delivery',
+      narrative: 'A newborn\'s cord blood is typed as <strong>B\u2212</strong>. The infant needs a small-volume transfusion due to anemia. The hospital\'s neonatal blood supply currently has: <strong>O\u2212, O+, A\u2212</strong>.',
+      question: 'Which unit(s) can be safely given to this infant?',
+      options: [
+        'O\u2212 only',
+        'O\u2212 or O+, since both are type O',
+        'A\u2212, since it matches the Rh factor',
+        'Any of the three, since neonates are immunologically immature'
+      ],
+      correct: 0,
+      explanation: '<strong>O\u2212 only.</strong> The infant is B\u2212 (Rh-negative). O\u2212 red cells carry no A, B, or D antigens, making it universally compatible. O+ would introduce the D antigen to an Rh-negative recipient, risking sensitization. A\u2212 carries A antigens, which would react with anti-A antibodies. Neonatal immune immaturity does not eliminate transfusion reaction risk.'
+    },
+    {
+      tag: 'Community Blood Drive',
+      narrative: 'During a campus blood drive, a student donor is typed as <strong>O\u2212</strong>. The blood bank coordinator explains that this donation is especially valuable because of its universal compatibility.',
+      question: 'Why is O\u2212 considered the universal red blood cell donor type?',
+      options: [
+        'O\u2212 blood contains universal antibodies that help any recipient',
+        'O\u2212 red blood cells lack A, B, and D antigens, so no recipient will mount an immune response against them',
+        'O\u2212 blood has a special protein coating that prevents all immune reactions',
+        'O\u2212 is the most common blood type, so most recipients are already familiar with it'
+      ],
+      correct: 1,
+      explanation: 'O\u2212 red blood cells carry <strong>no A, B, or Rh(D) antigens</strong> on their surface. Since transfusion reactions are caused by recipient antibodies attacking foreign antigens on donor cells, O\u2212 cells have nothing for any recipient\'s antibodies to target. This makes them safe for virtually any patient in an emergency when there is no time to type and crossmatch.'
+    },
+    {
+      tag: 'Surgical Suite',
+      narrative: 'A 58-year-old man with blood type <strong>AB+</strong> is undergoing open-heart surgery. Midway through the procedure, blood loss exceeds estimates. The surgical team requests additional units. The blood bank has run low and can only offer: <strong>A+, B\u2212, O+, AB\u2212</strong>.',
+      question: 'Which of these units are safe to transfuse? Select the best answer.',
+      options: [
+        'Only AB\u2212, because it is the closest ABO match',
+        'A+ and AB\u2212 only',
+        'All four units are safe for this patient',
+        'O+ and AB\u2212 only'
+      ],
+      correct: 2,
+      explanation: '<strong>All four are safe.</strong> AB+ is the <strong>universal recipient</strong> for red blood cells. The patient has no anti-A, no anti-B, and no anti-D antibodies, so red cells carrying any combination of A, B, and/or D antigens will not provoke a reaction. A+ (has A and D), B\u2212 (has B), O+ (has D only), and AB\u2212 (has A and B) are all compatible.'
+    },
+    {
+      tag: 'Trauma Center',
+      narrative: 'An unconscious patient arrives by helicopter after a construction accident. There is no time to type their blood. The trauma team needs to begin a transfusion immediately.',
+      question: 'What blood type should the team reach for in this emergency?',
+      options: [
+        'A+, because it is the most common blood type',
+        'AB+, because it is the universal recipient type',
+        'O\u2212, because it is safe for any patient regardless of their blood type',
+        'O+, because most people are Rh-positive anyway'
+      ],
+      correct: 2,
+      explanation: 'In an emergency with an <strong>unknown blood type</strong>, the standard protocol is to transfuse <strong>O\u2212</strong> red blood cells. With no A, B, or D antigens, O\u2212 cells will not trigger a reaction regardless of the patient\'s actual type. While O+ is sometimes used for male trauma patients at some institutions, O\u2212 is the safest universal choice and the standard first reach in most protocols.'
+    },
+    {
+      tag: 'Outpatient Clinic',
+      narrative: 'A patient with blood type <strong>B+</strong> needs a scheduled transfusion for chronic anemia. The clinic\'s refrigerator contains: <strong>B+, B\u2212, A+, O\u2212</strong>. The nurse wants to confirm the safe options before beginning.',
+      question: 'Which units are compatible for this patient?',
+      options: [
+        'B+ only — always use an exact match when available',
+        'B+ and B\u2212 only',
+        'B+, B\u2212, and O\u2212',
+        'B+, B\u2212, O\u2212, and A+'
+      ],
+      correct: 2,
+      explanation: 'A <strong>B+</strong> patient can safely receive: <strong>B+</strong> (exact match), <strong>B\u2212</strong> (same ABO, Rh-negative is always safe for Rh-positive recipients), and <strong>O\u2212</strong> (universal donor, no A/B/D antigens). <strong>A+</strong> is not compatible because the A antigen would be attacked by the patient\'s anti-A antibodies.'
+    }
+  ];
+
+  const caseCurrent = document.getElementById('case-current');
+  const caseTotal = document.getElementById('case-total');
+  const caseProgress = document.getElementById('case-progress');
+  const caseScoreEl = document.getElementById('case-score');
+  const caseArea = document.getElementById('case-area');
+  const caseSummary = document.getElementById('case-summary');
+  const caseFinalScore = document.getElementById('case-final-score');
+  const caseFinalMessage = document.getElementById('case-final-message');
+
+  let caseIdx = 0;
+  let caseScore = 0;
+  let caseOrder = [];
+
+  function initCases() {
+    caseOrder = [...Array(CASES.length).keys()].sort(() => Math.random() - 0.5);
+    caseIdx = 0;
+    caseScore = 0;
+    caseScoreEl.textContent = '0';
+    caseTotal.textContent = CASES.length;
+    caseSummary.style.display = 'none';
+    buildCaseProgressDots();
+    renderCase();
+  }
+
+  function buildCaseProgressDots() {
+    caseProgress.innerHTML = '';
+    CASES.forEach((_, i) => {
+      const dot = document.createElement('span');
+      dot.className = 'dot' + (i === 0 ? ' current' : '');
+      dot.setAttribute('aria-label', 'Case ' + (i + 1));
+      caseProgress.appendChild(dot);
+    });
+  }
+
+  function renderCase() {
+    if (caseIdx >= CASES.length) {
+      showCaseSummary();
+      return;
+    }
+    const c = CASES[caseOrder[caseIdx]];
+    caseCurrent.textContent = caseIdx + 1;
+
+    caseProgress.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('current', i === caseIdx);
+    });
+
+    caseArea.innerHTML = '';
+
+    // Narrative block
+    const narDiv = document.createElement('div');
+    narDiv.className = 'case-narrative';
+    narDiv.innerHTML = '<span class="case-tag">' + c.tag + '</span><p>' + c.narrative + '</p>';
+    caseArea.appendChild(narDiv);
+
+    // Question
+    const qDiv = document.createElement('div');
+    qDiv.className = 'case-question';
+    qDiv.textContent = c.question;
+    caseArea.appendChild(qDiv);
+
+    // Options
+    const optsDiv = document.createElement('div');
+    optsDiv.className = 'case-options';
+    optsDiv.setAttribute('role', 'group');
+    optsDiv.setAttribute('aria-label', 'Answer choices');
+    c.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'case-opt-btn';
+      btn.setAttribute('aria-pressed', 'false');
+      const letter = String.fromCharCode(65 + i);
+      btn.innerHTML = '<strong>' + letter + '.</strong> ' + opt;
+      btn.addEventListener('click', () => submitCaseAnswer(i, btn, c));
+      optsDiv.appendChild(btn);
+    });
+    caseArea.appendChild(optsDiv);
+
+    // Explanation (hidden until answered)
+    const expDiv = document.createElement('div');
+    expDiv.className = 'case-explanation';
+    expDiv.id = 'case-explanation';
+    expDiv.setAttribute('role', 'region');
+    expDiv.setAttribute('aria-label', 'Explanation');
+    caseArea.appendChild(expDiv);
+
+    announce('Case ' + (caseIdx + 1) + ': ' + c.tag);
+  }
+
+  function submitCaseAnswer(chosen, btn, caseData) {
+    // Prevent double-answering
+    const allBtns = caseArea.querySelectorAll('.case-opt-btn');
+    if (btn.disabled) return;
+    allBtns.forEach(b => { b.disabled = true; });
+
+    btn.setAttribute('aria-pressed', 'true');
+
+    const correct = chosen === caseData.correct;
+    if (correct) {
+      caseScore++;
+      caseScoreEl.textContent = caseScore;
+      btn.classList.add('opt-correct');
+      caseProgress.querySelectorAll('.dot')[caseIdx].className = 'dot done-correct';
+    } else {
+      btn.classList.add('opt-incorrect');
+      allBtns[caseData.correct].classList.add('opt-correct');
+      caseProgress.querySelectorAll('.dot')[caseIdx].className = 'dot done-incorrect';
+    }
+
+    // Show explanation
+    const expDiv = document.getElementById('case-explanation');
+    expDiv.innerHTML = (correct ? '<strong>Correct!</strong> ' : '<strong>Not quite.</strong> ') + caseData.explanation;
+    expDiv.classList.add('show');
+
+    // Add next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-primary';
+    nextBtn.style.marginTop = '1rem';
+    nextBtn.textContent = caseIdx < CASES.length - 1 ? 'Next Case →' : 'See Results';
+    nextBtn.addEventListener('click', () => { caseIdx++; renderCase(); });
+    caseArea.appendChild(nextBtn);
+
+    announce(correct ? 'Correct!' : 'Incorrect.');
+  }
+
+  function showCaseSummary() {
+    caseArea.innerHTML = '';
+    caseSummary.style.display = '';
+    caseFinalScore.textContent = caseScore + ' / ' + CASES.length;
+    const pct = Math.round((caseScore / CASES.length) * 100);
+    if (pct === 100) caseFinalMessage.textContent = 'Excellent clinical reasoning! You nailed every case.';
+    else if (pct >= 67) caseFinalMessage.textContent = 'Strong work! Review the cases you missed and try again.';
+    else caseFinalMessage.textContent = 'Keep studying the compatibility rules and give it another shot.';
+    announce('Case studies complete. Score: ' + caseScore + ' out of ' + CASES.length);
+  }
+
+  document.getElementById('retry-cases-btn').addEventListener('click', initCases);
+
+  // Init cases on tab activation
+  const tabCases = document.getElementById('tab-cases');
+  let casesInitialized = false;
+  tabCases.addEventListener('click', () => {
+    if (!casesInitialized) { initCases(); casesInitialized = true; }
+  });
+
+  // SR announcement helper
+  function announce(msg) {
+    const el = document.getElementById('sr-announcements');
+    el.textContent = '';
+    setTimeout(() => { el.textContent = msg; }, 100);
+  }
+})();
+</script>
+</body>
+</html>
