@@ -1,8 +1,10 @@
 # Blood Typing Simulation
 
 An interactive, browser-based simulation for teaching **ABO & Rh blood typing**
-and **transfusion compatibility** in Anatomy & Physiology II. Built as a
-zero-dependency static site so it can be hosted directly from GitHub Pages.
+and **transfusion compatibility** in Anatomy & Physiology II for allied-health
+programs (nursing, vet tech, dental hygiene, medical lab tech, EMT/paramedic,
+respiratory care). Built as a zero-dependency static site so it can be hosted
+directly from GitHub Pages.
 
 ## Features
 
@@ -12,7 +14,9 @@ zero-dependency static site so it can be hosted directly from GitHub Pages.
   observe agglutination, then identify the blood type.
 - **Compatibility** — For each recipient, select all compatible RBC donor
   types; scored with progress dots and a final summary.
-- **Case Studies** — Multiple-choice clinical scenarios with explanations.
+- **Case Studies** — Multiple-choice clinical scenarios drawn from the
+  settings allied-health students will work in (ED, NICU, OR, blood bank,
+  pre-hospital, respiratory care).
 - Light / dark theme that follows the OS preference and persists.
 - Keyboard-navigable, screen-reader friendly, and tested against WCAG 2.1 AA
   contrast requirements.
@@ -21,45 +25,49 @@ zero-dependency static site so it can be hosted directly from GitHub Pages.
 
 ```
 .
-├── index.html        # Markup, landmarks, ARIA scaffolding
+├── index.html                # Markup, landmarks, ARIA scaffolding
+├── config.js                 # ← EDIT THIS to change content
 ├── css/
-│   └── styles.css    # All styles. Light + dark theme via CSS variables.
+│   └── styles.css            # All styles. Light + dark theme via CSS variables.
 └── js/
-    ├── config.js     # ← Edit this file to change content
-    └── app.js        # Application logic (ES module, imports config.js)
+    ├── app.js                # Entry point (boot/wiring only)
+    ├── blood-science.js      # TYPES, ANTIGENS, ANTIBODIES, canReceive()
+    ├── theme.js              # Light/dark toggle
+    ├── tabs.js               # ARIA tab navigation
+    ├── ui-helpers.js         # Shared DOM helpers, derived tables
+    ├── typing.js             # "Type a Sample" tab logic
+    ├── match.js              # "Compatibility" tab logic
+    └── cases.js              # "Case Studies" tab logic
 ```
 
-Everything is plain HTML / CSS / ES modules. There is **no build step** and no
-package manager.
+Everything is plain HTML / CSS / ES modules. There is **no build step** and
+no package manager.
 
-## Editing the questions
+## Editing course content
 
-All editable content lives in **`js/config.js`**. The file is organized into
-labeled sections:
+All editable content lives in **`config.js`** at the repo root, in a format
+designed for non-coders. The file contains three sections:
 
-| Section      | What it controls                                                  |
-| ------------ | ----------------------------------------------------------------- |
-| `UI`         | App title, subtitle, footer, tab labels, theme-toggle labels      |
-| `TYPES`      | The set of blood types used everywhere                            |
-| `ANTIGENS`   | Antigen profile for each type (drives agglutination reactions)    |
-| `ANTIBODIES` | Plasma antibodies for each type (drives compatibility logic)      |
-| `PATIENTS`   | Roster shown in the **Type a Sample** tab                         |
-| `CASES`      | The clinical scenarios in the **Case Studies** tab                |
+| Section     | What it controls                                              |
+| ----------- | ------------------------------------------------------------- |
+| `APP_TEXT`  | App title, subtitle, and footer.                              |
+| `PATIENTS`  | Roster shown in the **Type a Sample** tab.                    |
+| `CASES`     | Clinical scenarios in the **Case Studies** tab.               |
 
 The interpretation table on the Learn tab and the full compatibility reference
-table are **derived automatically** from `TYPES` + `ANTIGENS` + `ANTIBODIES` —
-there is no separate answer key to maintain.
+table are **derived automatically** from the blood science in
+`js/blood-science.js` — there is no separate answer key to maintain.
 
 ### Add or change a patient
 
 ```js
 export const PATIENTS = [
-  { name: 'Patient 1', type: 'A+' },
-  { name: 'Mr. Johnson', type: 'AB-' },   // ← new entry
+  { name: 'Patient 1',  type: 'A+'  },
+  { name: 'Mrs. Alvarez', type: 'AB-' },   // ← new entry
 ];
 ```
 
-`type` must be one of the values in `TYPES`.
+`type` must be one of: `O-`, `O+`, `A-`, `A+`, `B-`, `B+`, `AB-`, `AB+`.
 
 ### Add or change a case study
 
@@ -82,24 +90,7 @@ export const CASES = [
 ```
 
 `narrative` and `explanation` accept simple inline HTML (`<strong>`, `<em>`,
-etc.) for emphasis.
-
-### Change UI copy
-
-```js
-export const UI = {
-  appTitle: 'Blood Typing Simulation',
-  appSubtitle: 'ABO & Rh Blood Group Identification — Anatomy & Physiology II',
-  footerText: 'Blood Typing Simulation — Anatomy & Physiology II',
-  tabs: {
-    learn: 'Learn',
-    type:  'Type a Sample',
-    match: 'Compatibility',
-    cases: 'Case Studies',
-  },
-  // ...
-};
-```
+`<br>`) for emphasis.
 
 ## Running locally
 
@@ -130,8 +121,8 @@ No additional configuration is required — the site is fully static.
 
 ## Accessibility
 
-The simulation targets **WCAG 2.1 AA** / **Section 508** conformance so it can
-be used in U.S. higher-education contexts:
+The simulation targets **WCAG 2.1 AA** / **Section 508** conformance so it
+can be used in U.S. higher-education contexts:
 
 - Semantic landmarks (`<header>`, `<main>`, `<footer>`), heading hierarchy,
   table captions and scoped headers.
@@ -151,8 +142,8 @@ be used in U.S. higher-education contexts:
 
 ## Browser support
 
-Any modern browser that supports ES modules (Chrome ≥ 61, Firefox ≥ 60, Safari
-≥ 11, Edge ≥ 16). No transpilation or polyfills required.
+Any modern browser that supports ES modules (Chrome ≥ 61, Firefox ≥ 60,
+Safari ≥ 11, Edge ≥ 16). No transpilation or polyfills required.
 
 ## License
 
